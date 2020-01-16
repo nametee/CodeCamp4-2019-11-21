@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        function createStore(reducer,initialState) { 
+            let state = initialState 
+            let subscribers = {}
+        
+            return {
+            getState: () => state ,
+            dispatch: (action) => {
+                state = reducer(state,action)  
+                Object.values(subscribers).forEach(value => {
+                    value()
+                }) 
+            },
+            subscribe: (callback) =>{
+                let index =  Object.keys(subscribers).length
+                index = index > 0 ? +Object.keys(subscribers)[index-1] + 1 : 0 
+                subscribers[index] = callback  
+                return index
+            },
+            unsubscribe: (id) => {  
+                delete subscribers[id] 
+            }
+            }
+        }
+
+        let initialState = {
+        countNum : 0,
+        show : true
+        }
+
+        function counterReducer(state,action){
+        switch(action.type){
+            case "INCREMENT" :
+            return { ...state , countNum: state.countNum + 1}
+            case "DECREMENT" : 
+            return { ...state , countNum: state.countNum - 1}
+            case "TOGGLE" :
+            return { ...state , show: !state.show}
+            default :
+            return state
+        }
+        } 
+
+        const increment = () => ({ type: "INCREMENT"})
+        const decrement = () => ({ type: "DECREMENT"})
+        const toggle = () => ({ type: "TOGGLE"})
+
+        let store = createStore(counterReducer, initialState)
+
+        class Counter extends React.Component {
+        componentDidMount = () => {
+            store.subscribe(()=>{
+            this.forceUpdate()
+            })
+        }
+        handleAdd = () => store.dispatch(increment()) 
+        handleMinus = () => store.dispatch(decrement()) 
+        handleToggle = () => store.dispatch(toggle()) 
+        
+        render= () => {
+            const {countNum , show } = store.getState()
+            return (
+            <div>
+                <button onClick={ this.handleAdd } >+</button>
+                <button onClick={ this.handleMinus } >-</button>
+                <button onClick={ this.handleToggle } > show/hide </button>
+                {show && <p>count : { countNum }</p>}
+            </div>
+            )
+        }
+        }
+
+        ReactDOM.render(
+        <Counter />, 
+        document.getElementById('root')
+        )
+ 
+    </script>
+</body>
+</html>
